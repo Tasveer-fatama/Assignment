@@ -1,2 +1,21 @@
 node_modules
-.vscode
+.vscode/
+
+
+# Ignore Dell support-related files (if any)
+*.dell
+
+# Ignore Visual Studio Code specific files and folders
+.vscode/
+*.code-workspace
+
+# Ignore Node.js dependencies
+node_modules/
+
+# Ignore build files
+build/
+dist/
+
+# Ignore OS-specific files
+.DS_Store
+Thumbs.db
