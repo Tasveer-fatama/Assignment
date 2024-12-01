@@ -186,9 +186,8 @@ const Hero = () => {
                   top: item.y,
                   left: item.x,
                   cursor: "move",
-
-                  whiteSpace: "nowrap", // Prevents text from wrapping
-                  // textAlign: item.textAlign, // Alignment applied here
+                  
+                  whiteSpace: "nowrap", 
                 }}
                 onMouseDown={handleMouseDown(index)}
               >
