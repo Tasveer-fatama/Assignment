@@ -1,84 +1,97 @@
-import React, { useState} from "react";
+import React, { useState, useRef } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faArrowRotateLeft, faArrowRotateRight } from "@fortawesome/free-solid-svg-icons";
-import { FaCog, FaBold, FaItalic, FaUnderline, FaAlignLeft, FaAlignCenter, FaAlignRight, FaMinus, FaPlus } from 'react-icons/fa';
-
+import {
+  faArrowRotateLeft,
+  faArrowRotateRight,
+} from "@fortawesome/free-solid-svg-icons";
+import {
+  FaCog,
+  FaBold,
+  FaItalic,
+  FaUnderline,
+  FaMinus,
+  FaPlus,
+} from "react-icons/fa";
 
 const Hero = () => {
-   
-        const [fontSize, setFontSize] = useState(16);
-        const [isBold, setIsBold] = useState(false);
-        const [isItalic, setIsItalic] = useState(false);
-        const [isUnderline, setIsUnderline] = useState(false);
-        const [textAlign, setTextAlign] = useState('left');
-        const [showOptions, setShowOptions] = useState(false);
-      
-        const handleFontSizeIncrease = () => {
-          if (fontSize < 100) setFontSize(fontSize + 2);
-        };
-      
-        const handleFontSizeDecrease = () => {
-          if (fontSize > 10) setFontSize(fontSize - 2);
-        };
-      
-        const handleTextAlign = (align) => {
-          setTextAlign(align);
-        };
-      
-        const handleDragStart = (e) => {
-          e.dataTransfer.setData('text/plain', '');
-        };  
+  const [fontSize, setFontSize] = useState(16);
+  const [isBold, setIsBold] = useState(false);
+  const [isItalic, setIsItalic] = useState(false);
+  const [isUnderline, setIsUnderline] = useState(false);
+  const [selectedTextIndex, setSelectedTextIndex] = useState(null);
 
+  const [showOptions, setShowOptions] = useState(false);
+  const [textList, setTextList] = useState([]);
+  const [inputText, setInputText] = useState("");
+  const [undoStack, setUndoStack] = useState([]);
+  const [redoStack, setRedoStack] = useState([]);
+  const containerRef = useRef(null);
 
-  const [textList, setTextList] = useState([]); // Store all text items
-  const [inputText, setInputText] = useState(""); // Input field state
-  const [undoStack, setUndoStack] = useState([]); // Stack for undo functionality
-  const [redoStack, setRedoStack] = useState([]); // Stack for redo functionality
-
-  // Add new text dynamically
   const addText = () => {
     if (!inputText.trim()) return; // Prevent empty text
-    const defaultY = textList.length * 60 + 20; // Dynamically calculate Y position
-    const newTextList = [...textList, { text: inputText, x: 20, y: defaultY }];
-    setUndoStack([...undoStack, textList]); // Push current state to undo stack
-    setRedoStack([]); // Clear redo stack on new action
-    setTextList(newTextList); // Update state
-    setInputText(""); // Clear input field
+    const defaultY = textList.length * 60 + 20;
+    const newTextList = [
+      ...textList,
+      {
+        text: inputText,
+        x: 20,
+        y: defaultY,
+        fontSize: fontSize,
+        isBold: isBold,
+        isItalic: isItalic,
+        isUnderline: isUnderline,
+        textAlign: "left",
+      },
+    ];
+    setUndoStack([...undoStack, textList]);
+    setRedoStack([]);
+    setTextList(newTextList);
+    setInputText("");
   };
 
-  // Undo the last action
   const undo = () => {
-    if (undoStack.length === 0) return; // No undo actions available
-    const previousState = undoStack.pop(); // Get the last state from undo stack
-    setRedoStack([textList, ...redoStack]); // Push current state to redo stack
-    setTextList(previousState); // Restore previous state
-    setUndoStack([...undoStack]); // Update undo stack
+    if (undoStack.length === 0) return;
+    const previousState = undoStack.pop();
+    setRedoStack([textList, ...redoStack]);
+    setTextList(previousState);
+    setUndoStack([...undoStack]);
   };
 
-  // Redo the last undone action
   const redo = () => {
-    if (redoStack.length === 0) return; // No redo actions available
-    const nextState = redoStack.shift(); // Get the last state from redo stack
-    setUndoStack([...undoStack, textList]); // Push current state to undo stack
-    setTextList(nextState); // Restore next state
-    setRedoStack([...redoStack]); // Update redo stack
+    if (redoStack.length === 0) return;
+    const nextState = redoStack.shift();
+    setUndoStack([...undoStack, textList]);
+    setTextList(nextState);
+    setRedoStack([...redoStack]);
   };
 
-  // Handle dragging logic
   const handleMouseDown = (index) => (e) => {
+    setSelectedTextIndex(index);
+
     const startX = e.clientX;
     const startY = e.clientY;
     const textItem = textList[index];
 
     const handleMouseMove = (e) => {
+      if (!containerRef.current) return;
+
+      const containerRect = containerRef.current.getBoundingClientRect();
+
       const deltaX = e.clientX - startX;
       const deltaY = e.clientY - startY;
 
-      setTextList((prevTextList) =>
-        prevTextList.map((item, i) =>
-          i === index
-            ? { ...item, x: textItem.x + deltaX, y: textItem.y + deltaY }
-            : item
+      const newX = Math.max(
+        0,
+        Math.min(containerRect.width - 50, textItem.x + deltaX) // Ensure text stays within bounds
+      );
+      const newY = Math.max(
+        0,
+        Math.min(containerRect.height - 30, textItem.y + deltaY) // Ensure text stays within bounds
+      );
+
+      setTextList((prev) =>
+        prev.map((item, i) =>
+          i === index ? { ...item, x: newX, y: newY } : item
         )
       );
     };
@@ -92,11 +105,48 @@ const Hero = () => {
     window.addEventListener("mouseup", handleMouseUp);
   };
 
+  const handleFontSizeIncrease = () => {
+    setFontSize(fontSize + 2);
+    setTextList((prevTextList) =>
+      prevTextList.map((item) => ({
+        ...item,
+        fontSize: item.fontSize + 2,
+      }))
+    );
+  };
+
+  const handleFontSizeDecrease = () => {
+    setFontSize(fontSize - 2);
+    setTextList((prevTextList) =>
+      prevTextList.map((item) => ({
+        ...item,
+        fontSize: item.fontSize - 2,
+      }))
+    );
+  };
+
+  const handleStyleChange = (type) => {
+    if (selectedTextIndex === null) return; // No text selected
+
+    const updatedTextList = [...textList];
+    const selectedText = updatedTextList[selectedTextIndex];
+
+    if (type === "bold") {
+      selectedText.isBold = !selectedText.isBold;
+    } else if (type === "italic") {
+      selectedText.isItalic = !selectedText.isItalic;
+    } else if (type === "underline") {
+      selectedText.isUnderline = !selectedText.isUnderline;
+    }
+
+    setTextList(updatedTextList);
+  };
+
   return (
     <div>
       <div className="pt-16 pb-8 mx-auto max-w-5xl px-4 sm:pt-24">
         <div className="text-center">
-          <div className="text-5xl font-extrabold grid grid-flow-col gap-6 justify-center items-center bg-[#f8f6f6] m-6 mb-2 mr-12 my-12 h-18  pb-2 pt-2 border border-1 border-zinc-300 border-opacity-30 rounded-md">
+          <div className="text-5xl font-extrabold grid grid-flow-col gap-6 justify-center items-center bg-[#f8f6f6] m-auto mb-2 my-12 h-18 pb-2 pt-2 border border-1 border-zinc-300 border-opacity-30 rounded-md">
             <div className="flex flex-col items-center mt-8">
               <FontAwesomeIcon
                 icon={faArrowRotateLeft}
@@ -119,99 +169,103 @@ const Hero = () => {
             </div>
           </div>
 
-          <div className="w-full flex justify-center">
-            <div
-              className="flex flex-col items-center justify-start bg-[#030303] mt-1  m-6 mr-12 my-5 pb-5 border border-1 border-zinc-300 border-opacity-30 rounded-md relative overflow-hidden p-5"
-              style={{ minHeight: `${Math.max(200, textList.length * 70)}px`, width: "900px" }}
-            >
-              {textList.map((item, index) => (
-                <div
-                  key={index}
-                  className="absolute bg-transparent text-white text-3xl p-2 rounded shadow-lg cursor-move z-10"
-                  style={{ top: item.y, left: item.x }}
-                  onMouseDown={handleMouseDown(index)}
+          <div
+            ref={containerRef}
+            className="canvas"
+            style={{
+              position: "relative",
+              height: "300px",
+              border: "1px solid black",
+            }}
+          >
+            {textList.map((item, index) => (
+              <div
+                key={index}
+                style={{
+                  position: "absolute",
+                  top: item.y,
+                  left: item.x,
+                  cursor: "move",
+
+                  whiteSpace: "nowrap", // Prevents text from wrapping
+                  // textAlign: item.textAlign, // Alignment applied here
+                }}
+                onMouseDown={handleMouseDown(index)}
+              >
+                <span
+                  style={{
+                    fontSize: `${item.fontSize}px`,
+                    fontWeight: item.isBold ? "bold" : "normal",
+                    fontStyle: item.isItalic ? "italic" : "normal",
+                    textDecoration: item.isUnderline ? "underline" : "none",
+                    display: "inline-block",
+                  }}
                 >
                   {item.text}
+                </span>
+              </div>
+            ))}
+          </div>
+
+          <div className="flex flex-col items-center justify-center mx-auto bg-[#fffcfc] mt-1 px-4 pt-4 pb-4 border border-1 border-zinc-300 border-opacity-30 rounded-md max-w-5xl overflow-hidden">
+            <div
+              id="drag-box"
+              className="bg-white p-4 border-2 border-dashed rounded-lg shadow-lg cursor-move"
+            >
+              <div className="flex items-center justify-between mb-4 space-x-20">
+                <div className="flex items-center space-x-2">
+                  <FaCog
+                    className="text-gray-600 cursor-pointer"
+                    onClick={() => setShowOptions(!showOptions)}
+                  />
+                  <span className="font-bold text-xl">Text Styles</span>
                 </div>
-              ))}
+                <div className="flex items-center space-x-2">
+                  <button
+                    onClick={handleFontSizeDecrease}
+                    className="px-2 py-1 bg-gray-300 rounded-md text-gray-600 hover:bg-gray-400"
+                  >
+                    <FaMinus />
+                  </button>
+                  <span className="text-lg">{fontSize}</span>
+                  <button
+                    onClick={handleFontSizeIncrease}
+                    className="px-2 py-1 bg-gray-300 rounded-md text-gray-600 hover:bg-gray-400"
+                  >
+                    <FaPlus />
+                  </button>
+                </div>
+              </div>
+
+              {showOptions && (
+                <div className="space-x-4 mb-4">
+                  <button
+                    onClick={() => handleStyleChange("bold")}
+                    className={`text-gray-600 hover:text-black ${
+                      isBold ? "text-black" : ""
+                    }`}
+                  >
+                    <FaBold />
+                  </button>
+                  <button
+                    onClick={() => handleStyleChange("italic")}
+                    className={`text-gray-600 hover:text-black ${
+                      isItalic ? "text-black" : ""
+                    }`}
+                  >
+                    <FaItalic />
+                  </button>
+                  <button
+                    onClick={() => handleStyleChange("underline")}
+                    className={`text-gray-600 hover:text-black ${
+                      isUnderline ? "text-black" : ""
+                    }`}
+                  >
+                    <FaUnderline />
+                  </button>
+                </div>
+              )}
             </div>
-          </div>
-          {/* change font size and style */}
-          <div className="flex flex-col items-center justify-start bg-[#fffcfc] mt-1  mr-12  pb-2  border border-1 border-zinc-300 border-opacity-30 rounded-md relative overflow-hidden p-2"  >
-          <div
-        id="drag-box"
-        className="bg-white p-4 border-2 border-dashed rounded-lg shadow-lg cursor-move"
-        draggable="true"
-        onDragStart={handleDragStart}
-      >
-        <div className="flex items-center justify-between mb-4 space-x-20">
-          <div className="flex items-center space-x-2">
-            <FaCog
-              className="text-gray-600 cursor-pointer"
-              onClick={() => setShowOptions(!showOptions)}
-            />
-            <span className="font-bold text-xl">Text Styles</span>
-          </div>
-          <div className="flex items-center space-x-2">
-            <button
-              onClick={handleFontSizeDecrease}
-              className="px-2 py-1 bg-gray-300 rounded-md text-gray-600 hover:bg-gray-400"
-            >
-              <FaMinus />
-            </button>
-            <span className="text-lg">{fontSize}</span>
-            <button
-              onClick={handleFontSizeIncrease}
-              className="px-2 py-1 bg-gray-300 rounded-md text-gray-600 hover:bg-gray-400"
-            >
-              <FaPlus />
-            </button>
-          </div>
-        </div>
-
-        {showOptions && (
-          <div className="space-x-4 mb-4">
-            <button
-              onClick={() => setIsBold(!isBold)}
-              className="text-gray-600 hover:text-black"
-            >
-              <FaBold />
-            </button>
-            <button
-              onClick={() => setIsItalic(!isItalic)}
-              className="text-gray-600 hover:text-black"
-            >
-              <FaItalic />
-            </button>
-            <button
-              onClick={() => setIsUnderline(!isUnderline)}
-              className="text-gray-600 hover:text-black"
-            >
-              <FaUnderline />
-            </button>
-            <button
-              onClick={() => handleTextAlign('left')}
-              className="text-gray-600 hover:text-black"
-            >
-              <FaAlignLeft />
-            </button>
-            <button
-              onClick={() => handleTextAlign('center')}
-              className="text-gray-600 hover:text-black"
-            >
-              <FaAlignCenter />
-            </button>
-            <button
-              onClick={() => handleTextAlign('right')}
-              className="text-gray-600 hover:text-black"
-            >
-              <FaAlignRight />
-            </button>
-          </div>
-        )}
-
-        
-      </div>
           </div>
 
           <div className="mt-5 max-w-md mx-auto sm:flex sm:flex-col sm:items-center md:mt-8">

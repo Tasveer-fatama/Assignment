@@ -1,7 +1,7 @@
 import React, { useState, useRef } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faArrowRotateLeft, faArrowRotateRight } from "@fortawesome/free-solid-svg-icons";
-import { FaCog, FaBold, FaItalic, FaUnderline, FaAlignLeft, FaAlignCenter, FaAlignRight, FaMinus, FaPlus } from "react-icons/fa";
+import { FaCog, FaBold, FaItalic, FaUnderline, FaMinus, FaPlus } from "react-icons/fa";
 
 const Hero = () => {
   const [fontSize, setFontSize] = useState(16);
@@ -115,15 +115,7 @@ const Hero = () => {
     );
   };
 
-  const handleTextAlign = (align) => {
-    if (selectedTextIndex !== null) {
-      setTextList((prev) =>
-        prev.map((item, index) =>
-          index === selectedTextIndex ? { ...item, textAlign: align } : item
-        )
-      );
-    }
-  };
+ 
 
   const handleStyleChange = (type) => {
     if (selectedTextIndex === null) return; // No text selected
@@ -188,7 +180,7 @@ const Hero = () => {
       cursor: "move",
       
       whiteSpace: "nowrap", // Prevents text from wrapping
-      textAlign: item.textAlign, // Alignment applied here
+      // textAlign: item.textAlign, // Alignment applied here
     }}
     onMouseDown={handleMouseDown(index)}
   >
@@ -265,15 +257,7 @@ const Hero = () => {
                   >
                     <FaUnderline />
                   </button>
-                  <button onClick={() => handleTextAlign("left")}>
-                    <FaAlignLeft />
-                  </button>
-                  <button onClick={() => handleTextAlign("center")}>
-                    <FaAlignCenter />
-                  </button>
-                  <button onClick={() => handleTextAlign("right")}>
-                    <FaAlignRight />
-                  </button>
+                 
                 </div>
               )}
             </div>

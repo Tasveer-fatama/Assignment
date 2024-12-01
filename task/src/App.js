@@ -1,11 +1,11 @@
 import React from 'react'
-import Notes from '../src/notes'
+import Textcomponent from "./component/Textcomponent"
 
 
 const App = () => {
   return (
     <div>
-   <Notes/>
+     <Textcomponent/>
     </div>
   )
 }
